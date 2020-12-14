@@ -11,13 +11,15 @@ import DatePicker from "react-native-datepicker";
 import DataContext from "../context/DataContext";
 import RNPickerSelect from "react-native-picker-select";
 
-const QuotationSettingsScreen = ({ navigation }) => {
-  const { addSettings } = useContext(DataContext);
+const EditQuotationSettingsScreen = ({ navigation }) => {
+  const { state, addSettings } = useContext(DataContext);
 
-  const [quotationNumber, setQuotationyNumber] = useState();
-  const [quotationDate, setQuotationDate] = useState();
-  const [quotationRate, setQuotationRate] = useState();
-  const [quotationCurrency, setQuotationCurrency] = useState();
+  let { number, date, taxRate, currency } = state.settings;
+
+  const [quotationNumber, setQuotationyNumber] = useState(number);
+  const [quotationDate, setQuotationDate] = useState(date);
+  const [quotationRate, setQuotationRate] = useState(taxRate);
+  const [quotationCurrency, setQuotationCurrency] = useState(currency);
 
   const info = {
     number: quotationNumber,
@@ -31,6 +33,7 @@ const QuotationSettingsScreen = ({ navigation }) => {
       <TextInput
         placeholder="quotation number"
         style={styles.input}
+        value={quotationNumber}
         keyboardType="numeric"
         onChangeText={(text) => setQuotationyNumber(text)}
       />
@@ -40,6 +43,7 @@ const QuotationSettingsScreen = ({ navigation }) => {
         format="YYYY-MM-DD"
         confirmBtnText="Confirm"
         cancelBtnText="Cancel"
+        value={quotationDate}
         customStyles={{
           dateIcon: {
             position: "absolute",
@@ -64,6 +68,7 @@ const QuotationSettingsScreen = ({ navigation }) => {
       <TextInput
         placeholder="tax rate"
         style={styles.input}
+        value={quotationRate}
         keyboardType="numeric"
         onChangeText={(text) => setQuotationRate(text)}
       />
@@ -72,11 +77,12 @@ const QuotationSettingsScreen = ({ navigation }) => {
           onValueChange={(value) => setQuotationCurrency(value)}
           placeholder={{
             label: "Select currency...",
-            value: null,
+            value: quotationCurrency,
           }}
           style={{
             placeholder: {
               fontSize: 18,
+              color: "#111",
             },
           }}
           items={[
@@ -92,10 +98,10 @@ const QuotationSettingsScreen = ({ navigation }) => {
         style={styles.button}
         onPress={() => {
           addSettings(info);
-          navigation.navigate("Description");
+          navigation.pop();
         }}
       >
-        <Text style={styles.buttonTitle}>Next</Text>
+        <Text style={styles.buttonTitle}>Save</Text>
       </TouchableOpacity>
     </View>
   );
@@ -150,4 +156,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default QuotationSettingsScreen;
+export default EditQuotationSettingsScreen;

@@ -1,12 +1,31 @@
-import React, { useContext } from 'react';
-import * as Print from 'expo-print';
-import * as MediaLibrary from 'expo-media-library';
+import React, { useContext, useEffect, useState } from "react";
+import * as Print from "expo-print";
+import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
-import { View, Text, TouchableOpacity } from 'react-native';
-import DataContext from '../context/DataContext';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+} from "react-native";
+import DataContext from "../context/DataContext";
+import { Feather } from "@expo/vector-icons";
+import { EvilIcons } from "@expo/vector-icons";
+import email from "react-native-email";
 
-const PreviewScreen = () => {
-  const { state } = useContext(DataContext);
+const PreviewScreen = ({ navigation }) => {
+  const [subTotal, setSubTotal] = useState();
+  const { state, deleteDescription } = useContext(DataContext);
+  let total = 0;
+  useEffect(() => {
+    state.descriptions.forEach((element) => {
+      total = parseInt(element.hours) * parseInt(element.pricePerHour) + total;
+    });
+    setSubTotal(total);
+  }, []);
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -23,13 +42,11 @@ const PreviewScreen = () => {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             }
             .header{
-              display: flex;
               border-bottom: 4px solid #dadada;
               padding: 30px;
             }
-            .header img{
-              width: 60px;
-              margin-right: 30px;
+            section {
+              break-inside: avoid;
             }
             table{
               text-align: start;
@@ -58,17 +75,15 @@ const PreviewScreen = () => {
     </head>
     <body>
         <div class="header">
-          <img src="https://www.flaticon.com/svg/static/icons/svg/3643/3643358.svg" alt="">
-          <div>
-            <h1>Devis</h1>
-            <p>DVS-${state.settings.number}</p>
-          </div>
+          <h1>Devis</h1>
+          <p>DVS-${state.settings.number}</p>
+          <p>Date: ${state.settings.date}</p>
         </div>
         <div class="info">
           <section>
             <table>
-              <th>TO</th>
               <th>FROM</th>
+              <th>TO</th>
               <tr>
                 <td>${state.company.name}</td>
                 <td>${state.client.name}</td>
@@ -91,77 +106,219 @@ const PreviewScreen = () => {
             <div class="table">
               <table>
                 <th>DESCRIPTION</th>
-                <th>DAYS</th>
+                <th>HOURS</th>
                 <th>PRICE</th>
                 <th>TOTAL</th>
-                ${state.descriptions.map(description => {
-                  return(
-                    '<tr><td>' + description.description + '</td><td>' + description.hours + '</td><td>' + description.pricePerHour + '</td><td>$22000</td></tr>'
-                  )
-                }).join('')}
+                ${state.descriptions
+                  .map((description) => {
+                    return (
+                      "<tr><td>" +
+                      description.description +
+                      "</td><td>" +
+                      description.hours +
+                      "</td><td>" +
+                      state.settings.currency +
+                      description.pricePerHour +
+                      "</td><td>" +
+                      state.settings.currency +
+                      description.hours * description.pricePerHour +
+                      "</td></tr>"
+                    );
+                  })
+                  .join("")}
               </table>
             </div>
           </section>
           <section>
             <div class="table">
               <table>
-                <th>SUBTOTAL</th>
-                <th>GST (${state.settings.taxRate}%)</th>
-                <th>TOTAL</th>
+                <th>TOTAL HTC</th>
+                <th>TAX RATE (${state.settings.taxRate}%)</th>
+                <th>TOTAL TTC</th>
                 <tr>
-                  <td>$42,000</td>
-                  <td>$1,500</td>
-                  <td>$22,500</td>
+                  <td>${state.settings.currency}${subTotal}</td>
+                  <td>${state.settings.currency}${
+    (subTotal * state.settings.taxRate) / 100
+  }
+                  </td>
+                  <td>${state.settings.currency}${
+    subTotal + (subTotal * state.settings.taxRate) / 100
+  }
+                  </td>
                 </tr>
               </table>
             </div>
-          </section>
-          <section>
-            <div class="bank">
-              <h3>BANK DETAILS</h3>
-              <p>Bank Name: Macquaria Bank</p>
-              <p>BIC / SWIFT CODE: MACQUAU25</p>
-              <p>Account Holder: Tesla</p>
-              <p>Account Number: 1234567890</p>
-            </div>
-          </section>
-        </div>
+        </section>
     </body>
     </html>
 `;
 
-const createAndSavePDF = async (html) => {
-  try {
-    const { uri } = await Print.printToFileAsync({ html });
-    if (Platform.OS === "ios") {
-      await Sharing.shareAsync(uri);
-    } else {
-      const permission = await MediaLibrary.requestPermissionsAsync();
-      if (permission.granted) {
-        await MediaLibrary.createAssetAsync(uri);
+  const createAndSavePDF = async (html) => {
+    try {
+      const { uri } = await Print.printToFileAsync({ html });
+      if (Platform.OS === "ios") {
+        await Sharing.shareAsync(uri);
+      } else {
+        const permission = await MediaLibrary.requestPermissionsAsync();
+        if (permission.granted) {
+          await MediaLibrary.createAssetAsync(uri);
+        }
       }
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
-  }
-};
+  };
+
+  const handleEmail = () => {
+    const to = [state.client.email];
+    email(to, {
+      subject: "Show how to use",
+      body: "Some body right here",
+    }).catch(console.error);
+  };
+
   return (
-    <View>
-      <Text>Preview Screen</Text>
-      <Text>{JSON.stringify(state)}</Text>
-      <Text>my object: {state.descriptions.map(item => {
-        return item.description
-      }).join('')}</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Preview Screen</Text>
+      <View style={styles.block}>
+        <TouchableOpacity
+          onPress={() => {
+            navigation.navigate("EditCompany");
+          }}
+        >
+          <Text style={styles.blockTitle}>
+            Company
+            <EvilIcons name="pencil" size={25} />
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.row}>Name: {state.company.name}</Text>
+        <Text style={styles.row}>Address: {state.company.address}</Text>
+        <Text style={styles.row}>Email: {state.company.email}</Text>
+        <Text style={styles.row}>Phone: {state.company.phone}</Text>
+      </View>
+      <View style={styles.block}>
+        <TouchableOpacity
+          onPress={() => {
+            navigation.navigate("EditClient");
+          }}
+        >
+          <Text style={styles.blockTitle}>
+            Client
+            <EvilIcons name="pencil" size={25} />
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.row}>Name: {state.client.name}</Text>
+        <Text style={styles.row}>Address: {state.client.address}</Text>
+        <Text style={styles.row}>Email: {state.client.email}</Text>
+      </View>
+      <View style={styles.block}>
+        <TouchableOpacity
+          onPress={() => {
+            navigation.navigate("EditSettings");
+          }}
+        >
+          <Text style={styles.blockTitle}>
+            Settings
+            <EvilIcons name="pencil" size={25} />
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.row}>Number: {state.settings.number}</Text>
+        <Text style={styles.row}>Date: {state.settings.date}</Text>
+        <Text style={styles.row}>Tax Rate: {state.settings.taxRate}</Text>
+        <Text style={styles.row}>Currency: {state.settings.currency}</Text>
+      </View>
+      <FlatList
+        data={state.descriptions}
+        keyExtractor={(desciption) => desciption.id}
+        renderItem={({ item }) => {
+          return (
+            <View style={styles.description}>
+              <Text style={styles.price}>{item.description}</Text>
+              <Text>{item.hours}</Text>
+              <Text style={styles.price}>
+                {state.settings.currency}
+                {item.pricePerHour}
+              </Text>
+              <TouchableOpacity onPress={() => deleteDescription(item.id)}>
+                <Feather style={styles.icon} name="trash" />
+              </TouchableOpacity>
+            </View>
+          );
+        }}
+      />
       <TouchableOpacity
+        style={styles.button}
         onPress={() => {
-          createAndSavePDF(htmlContent)
-          alert('PDF generated')
+          createAndSavePDF(htmlContent);
+          alert("PDF generated");
         }}
       >
-        <Text>Create PDF</Text>
+        <Text style={styles.buttonTitle}>Create PDF</Text>
       </TouchableOpacity>
-    </View>
-  )
+      <TouchableOpacity style={styles.button} onPress={handleEmail}>
+        <Text style={styles.buttonTitle}>Send Mail</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
 };
+
+const styles = StyleSheet.create({
+  description: {
+    flexDirection: "row",
+    backgroundColor: "#FFF",
+    padding: 15,
+    margin: 10,
+    borderRadius: 10,
+    justifyContent: "space-between",
+  },
+  price: {
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+  icon: {
+    fontSize: 24,
+  },
+  button: {
+    backgroundColor: "#FF7A5A",
+    margin: 10,
+    borderRadius: 50,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: "#0893B0",
+    textAlign: "center",
+    margin: 10,
+  },
+  buttonTitle: {
+    color: "#fff",
+    alignSelf: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+    padding: 10,
+  },
+  block: {
+    backgroundColor: "#fff",
+    margin: 10,
+    borderRadius: 5,
+    padding: 5,
+  },
+  blockTitle: {
+    fontSize: 15,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    color: "#0893B0",
+    textAlign: "center",
+  },
+  row: {
+    margin: 5,
+  },
+  container: {
+    backgroundColor: "#f0f3f8",
+    height: Dimensions.get("window").height,
+  },
+});
 
 export default PreviewScreen;

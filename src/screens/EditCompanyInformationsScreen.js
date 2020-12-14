@@ -4,18 +4,19 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   Dimensions,
+  TouchableOpacity,
 } from "react-native";
 import DataContext from "../context/DataContext";
 
-const CompanyIformationsScreen = ({ navigation }) => {
-  const { addCompany } = useContext(DataContext);
+const EditCompanyInformationsScreen = ({ navigation }) => {
+  const { state, addCompany } = useContext(DataContext);
+  let { name, address, email, phone } = state.company;
 
-  const [companyName, setCompanyName] = useState();
-  const [companyAddress, setCompanyAddress] = useState();
-  const [companyPhoneNumber, setCompanyPhoneNumber] = useState();
-  const [companyEmail, setCompanyEmail] = useState();
+  const [companyName, setCompanyName] = useState(name);
+  const [companyAddress, setCompanyAddress] = useState(address);
+  const [companyPhoneNumber, setCompanyPhoneNumber] = useState(phone);
+  const [companyEmail, setCompanyEmail] = useState(email);
 
   const info = {
     name: companyName,
@@ -24,27 +25,30 @@ const CompanyIformationsScreen = ({ navigation }) => {
     email: companyEmail,
   };
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Company Screen</Text>
+    <View>
       <TextInput
         placeholder="company name"
         style={styles.input}
+        value={companyName}
         onChangeText={(text) => setCompanyName(text)}
       />
       <TextInput
         placeholder="company address"
         style={styles.input}
+        value={companyAddress}
         onChangeText={(text) => setCompanyAddress(text)}
       />
       <TextInput
         placeholder="company phone number"
         style={styles.input}
+        value={companyPhoneNumber}
         keyboardType="phone-pad"
         onChangeText={(text) => setCompanyPhoneNumber(text)}
       />
       <TextInput
         placeholder="company email"
         style={styles.input}
+        value={companyEmail}
         keyboardType="email-address"
         onChangeText={(text) => setCompanyEmail(text)}
       />
@@ -52,10 +56,10 @@ const CompanyIformationsScreen = ({ navigation }) => {
         style={styles.button}
         onPress={() => {
           addCompany(info);
-          navigation.navigate("Client");
+          navigation.pop();
         }}
       >
-        <Text style={styles.buttonTitle}>Next</Text>
+        <Text style={styles.buttonTitle}>Save</Text>
       </TouchableOpacity>
     </View>
   );
@@ -99,4 +103,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CompanyIformationsScreen;
+export default EditCompanyInformationsScreen;

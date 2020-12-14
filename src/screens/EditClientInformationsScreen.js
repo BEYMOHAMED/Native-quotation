@@ -3,59 +3,52 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
+  TextInput,
   Dimensions,
 } from "react-native";
 import DataContext from "../context/DataContext";
 
-const CompanyIformationsScreen = ({ navigation }) => {
-  const { addCompany } = useContext(DataContext);
+const EditClientInformationsScreen = ({ navigation }) => {
+  const { state, addClient } = useContext(DataContext);
 
-  const [companyName, setCompanyName] = useState();
-  const [companyAddress, setCompanyAddress] = useState();
-  const [companyPhoneNumber, setCompanyPhoneNumber] = useState();
-  const [companyEmail, setCompanyEmail] = useState();
+  let { name, address, email } = state.client;
 
-  const info = {
-    name: companyName,
-    address: companyAddress,
-    phone: companyPhoneNumber,
-    email: companyEmail,
-  };
+  const [clientName, setClientName] = useState(name);
+  const [clientAddress, setClientAddress] = useState(address);
+  const [clientEmail, setClientEmail] = useState(email);
+
+  const info = { name: clientName, address: clientAddress, email: clientEmail };
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Company Screen</Text>
+      <Text style={styles.title}>Client Screen</Text>
       <TextInput
-        placeholder="company name"
+        placeholder="client name"
         style={styles.input}
-        onChangeText={(text) => setCompanyName(text)}
+        value={clientName}
+        onChangeText={(text) => setClientName(text)}
       />
       <TextInput
-        placeholder="company address"
+        placeholder="client address"
         style={styles.input}
-        onChangeText={(text) => setCompanyAddress(text)}
+        value={clientAddress}
+        onChangeText={(text) => setClientAddress(text)}
       />
       <TextInput
-        placeholder="company phone number"
+        placeholder="client email"
         style={styles.input}
-        keyboardType="phone-pad"
-        onChangeText={(text) => setCompanyPhoneNumber(text)}
-      />
-      <TextInput
-        placeholder="company email"
-        style={styles.input}
+        value={clientEmail}
         keyboardType="email-address"
-        onChangeText={(text) => setCompanyEmail(text)}
+        onChangeText={(text) => setClientEmail(text)}
       />
       <TouchableOpacity
         style={styles.button}
         onPress={() => {
-          addCompany(info);
-          navigation.navigate("Client");
+          addClient(info);
+          navigation.pop();
         }}
       >
-        <Text style={styles.buttonTitle}>Next</Text>
+        <Text style={styles.buttonTitle}>Save</Text>
       </TouchableOpacity>
     </View>
   );
@@ -99,4 +92,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CompanyIformationsScreen;
+export default EditClientInformationsScreen;
